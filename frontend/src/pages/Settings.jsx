@@ -1,5 +1,5 @@
-import React from "react";
 import { useSelector } from "react-redux";
+import PasswordReset from "../components/PasswordReset.jsx";
 
 export default function Settings() {
     // ========================================
@@ -235,6 +235,8 @@ export default function Settings() {
                         Expiring within 30 days
                     </b>
                 </div>
+
+                <PasswordReset />
             </div>
         </div>
     );

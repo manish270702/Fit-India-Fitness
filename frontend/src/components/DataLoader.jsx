@@ -17,12 +17,13 @@ export default function DataLoader({ children }) {
     const token =
         reduxToken || localStorage.getItem("token");
 
-    const user =
-        JSON.parse(localStorage.getItem("fitgym_user") || "null");
+    const storedUser = localStorage.getItem("fitgym_user");
     // reduxUser ||
 
     // Set token and user in Redux
     useEffect(() => {
+        const user = storedUser ? JSON.parse(storedUser) : null;
+
         if (token) {
             dispatch(mountToken(token));
         }
@@ -30,7 +31,7 @@ export default function DataLoader({ children }) {
         if (user) {
             dispatch(mountUser(user));
         }
-    }, [token, user, dispatch]);
+    }, [token, storedUser, dispatch]);
 
     // Load application data
     useEffect(() => {

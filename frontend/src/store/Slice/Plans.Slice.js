@@ -17,13 +17,20 @@ export const PlansSlice = createSlice({
     AddPlan: (state,action)=>{
         state.value.push(action.payload);
     },
-    RemovePlan: (state,action)=>{
-        state.value = state.filter(i=> i._id !== action.payload._id)
+    UpdatePlan: (state, action) => {
+      state.value = state.value.map((plan) =>
+        plan._id === action.payload._id ? action.payload : plan
+      )
+    },
+    RemovePlan: (state, action) => {
+      state.value = state.value.filter(
+        (plan) => plan._id !== action.payload
+      )
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { mountPlans,unMountPlans,AddPlan,RemovePlan } = PlansSlice.actions
+export const { mountPlans,unMountPlans,AddPlan,UpdatePlan,RemovePlan } = PlansSlice.actions
 
 export default PlansSlice.reducer

@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import Modal from "../components/Modal.jsx";
-import axios from "axios";
 import { useDispatch, useSelector } from 'react-redux';
-import { AddPlan, mountPlans } from "../store/Slice/Plans.Slice.js";
-import { useNavigate } from 'react-router-dom';
+import { AddPlan, RemovePlan, UpdatePlan } from "../store/Slice/Plans.Slice.js";
 
 const money = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -19,8 +17,7 @@ export default  function Plans() {
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(null);
     const plans = useSelector((state) => state.plans.value);
-    // const dispatch = useDispatch();
-    // const navigate = useNavigate();
+    const dispatch = useDispatch();
     const {
         register,
         handleSubmit,
@@ -82,20 +79,11 @@ export default  function Plans() {
 
         if (edit) {
             // Update existing plan
-            setPlans((prev) =>
-                prev.map((plan) =>
-                    plan.id === edit.id
-                        ? {
-                              ...plan,
-                              ...planData,
-                          }
-                        : plan
-                )
-            );
+            dispatch(UpdatePlan({ ...edit, ...planData }));
         } else {
             // Add new plan
             const newPlan = {
-                id: Date.now().toString(),
+                _id: crypto.randomUUID(),
                 ...planData,
             };
 
@@ -104,7 +92,7 @@ export default  function Plans() {
             //     newPlan,
             // ]);
 
-            AddPlan(newPlan)
+            dispatch(AddPlan(newPlan));
         }
 
         setOpen(false);
@@ -122,9 +110,7 @@ export default  function Plans() {
 
         if (!confirmed) return;
 
-        setPlans((prev) =>
-            prev.filter((plan) => plan.id !== id)
-        );
+        dispatch(RemovePlan(id));
     };
 
     return (

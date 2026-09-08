@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { register, login, me } from "../controllers/auth.js";
+import { register, login, me, changePassword } from "../controllers/auth.js";
 import { protect } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 const r=Router();
-r.post("/register",register);
-r.post("/login",login);
-r.get("/me",protect,me);
+r.post("/register",asyncHandler(register));
+r.post("/login",asyncHandler(login));
+r.get("/me",protect,asyncHandler(me));
+r.post("/change-password",protect,asyncHandler(changePassword));
 export default r;

@@ -11,7 +11,7 @@ export const userSlice = createSlice({
     mountUser: (state,action) => {
       state.value = action.payload
     },
-    unMountUser:(state,action) => {
+    unMountUser:(state) => {
       state.value = {}
     }
     

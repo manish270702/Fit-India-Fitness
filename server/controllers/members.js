@@ -119,9 +119,14 @@ export async function renewMember(req, res) {
   member.refreshStatus();
   await member.save();
 
+  let payment;
   if (Number(amount) > 0) {
-    await Payment.create({ member: member._id, plan: plan._id, amount: Number(amount), method: method || "Cash", transactionId, note: note || "Membership renewal" });
+    payment = await Payment.create({ member: member._id, plan: plan._id, amount: Number(amount), method: method || "Cash", transactionId, note: note || "Membership renewal" });
+    payment = await payment.populate([
+      { path: "member", select: "name phone" },
+      { path: "plan", select: "name" }
+    ]);
   }
   const populated = await Member.findById(member._id).populate("trainer").populate("currentPlan");
-  res.json({ member: populated });
+  res.json({ member: populated, payment });
 }

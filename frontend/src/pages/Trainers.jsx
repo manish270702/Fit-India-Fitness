@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -122,7 +122,7 @@ export default function Trainers() {
         } else {
             // Add new trainer
             const newTrainer = {
-                id: Date.now().toString(),
+                id: crypto.randomUUID(),
                 ...trainerData,
             };
 

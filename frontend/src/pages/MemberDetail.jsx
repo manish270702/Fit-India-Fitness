@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
@@ -14,6 +14,8 @@ import { useForm } from "react-hook-form";
 import StatusBadge from "../components/StatusBadge.jsx";
 import Modal from "../components/Modal.jsx";
 import { useDispatch, useSelector } from "react-redux";
+import { AddPayment } from "../store/Slice/Payment.Slice";
+import { UpdateMember } from "../store/Slice/Members.Slice";
 
 const money = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -44,7 +46,7 @@ export default function MemberDetail() {
     const allPayments = useSelector((state) => state.payments.value);
 
     const payments = allPayments.filter(
-        (p) => p.member?._id === id
+        (p) => p.member?._id?.toString() === id
     );
 
 
@@ -77,12 +79,12 @@ export default function MemberDetail() {
 
     const onRenew = async (data) => {
         try {
-            const res = await axios.put(
-                `http://localhost:5000/api/payment/`,
+            const res = await axios.post(
+                `http://localhost:5000/api/members/${id}/renew`,
                 {
                     planId: data.planId,
                     amount: Number(data.amount),
-                    paymentMethod: data.method,
+                    method: data.method,
                     transactionId: data.transactionId,
                 },
                 {
@@ -96,6 +98,9 @@ export default function MemberDetail() {
 
             // Update Redux member
             dispatch(UpdateMember(res.data.member));
+            if (res.data.payment) {
+                dispatch(AddPayment(res.data.payment));
+            }
 
             // Close modal
             setRenew(false);

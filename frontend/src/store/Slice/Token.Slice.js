@@ -11,10 +11,13 @@ export const tokenSlice = createSlice({
     mountToken: (state,action) => {
       state.value = action.payload
     },
+    unMountToken: (state) => {
+      state.value = ""
+    },
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { mountToken } = tokenSlice.actions
+export const { mountToken, unMountToken } = tokenSlice.actions
 
 export default tokenSlice.reducer

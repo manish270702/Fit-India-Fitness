@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import axios from "axios";
+import { useState } from "react";
 import { CreditCard, Plus, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import Modal from "../components/Modal.jsx";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { AddPayment } from "../store/Slice/Payment.Slice";
 
 const money = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -24,6 +26,7 @@ const formatDate = (d) =>
 export default function Payments() {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const dispatch = useDispatch();
 
     // ========================================
     // STATIC MEMBERS
@@ -60,6 +63,7 @@ export default function Payments() {
 
 
     const payments = useSelector((state) => state.payments.value);
+    const token = useSelector((state) => state.token.value);
 
     const {
         register,
@@ -103,49 +107,42 @@ export default function Payments() {
     // ========================================
     const onSubmit = async (data) => {
         const selectedMember = members.find(
-            (member) => member.id === data.member
+            (member) => member._id === data.member
         );
 
-        const newPayment = {
-            id: Date.now().toString(),
+        if (!selectedMember) return;
 
-            paymentDate: new Date()
-                .toISOString()
-                .slice(0, 10),
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/api/payments",
+                {
+                    member: selectedMember._id,
+                    amount: Number(data.amount),
+                    method: data.method,
+                    transactionId: data.transactionId,
+                    note: data.note,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
-            member: {
-                name: selectedMember?.name || "Unknown",
-                phone: selectedMember?.phone || "",
-            },
-
-            plan: {
-                name: "Manual Payment",
-            },
-
-            method: data.method,
-
-            transactionId: data.transactionId,
-
-            amount: Number(data.amount),
-
-            note: data.note,
-        };
-
-        await new Promise((resolve) =>
-            setTimeout(resolve, 500)
-        );
-
-        setPayments((prev) => [
-            newPayment,
-            ...prev,
-        ]);
-
-        // console.log("Payment Data:", data);
-
-        reset();
-        setOpen(false);
-
-        alert("Payment recorded successfully!");
+            dispatch(AddPayment(response.data.payment));
+            reset();
+            setOpen(false);
+            alert("Payment recorded successfully!");
+        } catch (error) {
+            console.error(
+                "Payment error:",
+                error.response?.data || error.message
+            );
+            alert(
+                error.response?.data?.message ||
+                "Failed to record payment"
+            );
+        }
     };
 
     return (
@@ -483,8 +480,8 @@ export default function Payments() {
 
                             {members.map((member) => (
                                 <option
-                                    key={member.id}
-                                    value={member.id}
+                                    key={member._id}
+                                    value={member._id}
                                 >
                                     {member.name} — {member.phone}
                                 </option>

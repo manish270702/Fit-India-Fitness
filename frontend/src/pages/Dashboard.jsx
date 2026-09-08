@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import {
     Users,
     UserCheck,
@@ -11,11 +11,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 
 import StatCard from "../components/StatCard.jsx";
-import { useDispatch, useSelector } from "react-redux";
-import axios, { all } from "axios";
-import { mountPlans } from "../store/Slice/Plans.Slice.js";
-import { mountMembers } from "../store/Slice/Members.Slice.js";
-import { mountPayments } from "../store/Slice/Payment.Slice.js";
+import { useSelector } from "react-redux";
 
 const fmt = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -36,14 +32,12 @@ const date = (d) =>
 export default function Dashboard() {
     // authentication
     const navigate = useNavigate()
-    const dispatch = useDispatch()
     const token = useSelector((state) => state.token.value) || localStorage.getItem(
         "fitIndiaFitness_token"
     );
     if (token === "") navigate("/login")
 
     //plans
-    const plans = useSelector((state) => state.plans.value)
     // console.log(plans)
 
     // const allplans = async () => {

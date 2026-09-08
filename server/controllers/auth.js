@@ -29,3 +29,21 @@ export async function login(req, res) {
 export async function me(req, res) {
   res.json({ user: req.user });
 }
+
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Current and new passwords are required" });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "New password must be at least 6 characters" });
+  }
+
+  const user = await User.findById(req.user._id);
+  const valid = user && await bcrypt.compare(currentPassword, user.password);
+  if (!valid) return res.status(401).json({ message: "Current password is incorrect" });
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+  res.json({ message: "Password changed successfully" });
+}

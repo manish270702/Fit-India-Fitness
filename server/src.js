@@ -38,8 +38,13 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use((err, req, res, next) => {
   console.error(err);
 
-  res.status(err.status || 500).json({
-    message: err.message || "Server error",
+  const isBadRequest = err instanceof SyntaxError ||
+    err.name === "CastError" ||
+    err.name === "ValidationError";
+  const status = isBadRequest ? 400 : err.code === 11000 ? 409 : err.status || 500;
+
+  res.status(status).json({
+    message: isBadRequest ? "Invalid request data" : err.message || "Server error",
   });
 });
 

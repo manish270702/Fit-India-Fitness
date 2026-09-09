@@ -37,63 +37,18 @@ export default function Dashboard() {
     );
     if (token === "") navigate("/login")
 
-    //plans
-    // console.log(plans)
-
-    // const allplans = async () => {
-    //     const res = await axios.get("http://localhost:5000/api/plans", {
-    //         headers: {
-    //             authorization: `Bearer ${token}`
-    //         }
-    //     })
-    //     // console.log(res.data.plans)
-
-    //     dispatch(mountPlans(res.data.plans))
-
-    // }
-
-
     //members
     const members = useSelector((state) => state.members.value)
-    // console.log(members)
 
-    // const allmembers = async () => {
-    //     const res = await axios.get("http://localhost:5000/api/members", {
-    //         headers: {
-    //             authorization: `Bearer ${token}`
-    //         }
-    //     })
-    //     // console.log(res.data.members)
-
-    //     dispatch(mountMembers(res.data.members))
-
-    // }
 
     //payements
     const payments = useSelector((state) => state.payments.value);
-    // console.log(payments)
 
-    // const allpayements = async () => {
-    //     const res = await axios.get("http://localhost:5000/api/payments", {
-    //         headers: {
-    //             authorization: `Bearer ${token}`
-    //         }
-    //     })
-    //     // console.log(res.data.payments)
-
-    //     dispatch(mountPayments(res.data.payments))
-
-    // }
 
     useEffect(() => {
         if (token === "") navigate("/login")
     }, [token])
 
-    // useEffect(() => {
-    //     allplans()
-    //     allmembers()
-    //     allpayements()
-    // }, [])
 
     // Static dashboard data
     const data = {
@@ -121,9 +76,7 @@ export default function Dashboard() {
 
     return (
         <div className="w-full">
-            {/* ========================================
-                PAGE HEADER
-            ======================================== */}
+       
             <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                     <h1 className="text-[25px] font-bold tracking-[-0.7px] text-[#151515] sm:text-[27px]">

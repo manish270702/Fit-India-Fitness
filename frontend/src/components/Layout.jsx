@@ -12,8 +12,9 @@ import {
     FileBarChart,
     Settings,
     LogOut,
-    Bell,
     ChevronDown,
+    Menu,
+    X,
 } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -44,6 +45,7 @@ export default function Layout() {
     const nav = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.value);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     return (
         <div
@@ -105,7 +107,7 @@ export default function Layout() {
 
                     <div className="flex flex-col">
                         <b className="text-[15px] leading-tight text-[#151515]">
-                            FitGym
+                            Fit India Fitness
                         </b>
 
                         <small className="mt-0.5 text-[9px] text-[#999]">
@@ -246,14 +248,9 @@ export default function Layout() {
                         F
                     </div>
 
-                    <b className="text-[15px]">
-                        FitGym
-                    </b>
                 </div>
 
                 <div className="flex items-center gap-2">
-                            <Notifications />
-
                     <span className="max-w-[90px] truncate text-[11px] font-medium text-[#555]">
                         {user?.name || "Admin"}
                     </span>
@@ -276,20 +273,50 @@ export default function Layout() {
                         {user?.name?.[0]?.toUpperCase() || "A"}
                     </div>
 
-                    <nav className="absolute left-0 right-0 top-[62px] flex h-12 items-center gap-1 overflow-x-auto border-b border-[#e8e8e8] bg-white px-3 lg:hidden">
-                        {links.map(([to, label, Icon]) => (
-                            <NavLink
-                                key={to}
-                                to={to}
-                                end={to === "/"}
-                                className={({ isActive }) => `flex shrink-0 items-center gap-1.5 rounded-[6px] px-2.5 py-2 text-[10px] font-medium ${isActive ? "bg-[#fff4b8] text-[#806900]" : "text-[#666]"}`}
-                            >
-                                <Icon size={14} />
-                                {label === "Membership Plans" ? "Plans" : label}
-                            </NavLink>
-                        ))}
-                    </nav>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            logout();
+                            nav("/login");
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#666] transition hover:bg-[#fff0f0] hover:text-[#d22d2d]"
+                        aria-label="Logout"
+                    >
+                        <LogOut size={18} />
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setMobileNavOpen((open) => !open)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#666] transition hover:bg-[#f5f5f5]"
+                        aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+                        aria-expanded={mobileNavOpen}
+                        aria-controls="mobile-navigation"
+                    >
+                        {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
                 </div>
+
+                <nav
+                    id="mobile-navigation"
+                    aria-label="Quick links"
+                    aria-hidden={!mobileNavOpen}
+                    className={`absolute left-0 right-0 top-[62px] flex flex-col gap-1 border-b border-[#e8e8e8] bg-white p-2 shadow-[0_8px_16px_rgba(0,0,0,0.08)] transition-[max-height,opacity] duration-300 ease-out lg:hidden ${mobileNavOpen ? "max-h-[calc(100vh-62px)] overflow-y-auto opacity-100" : "pointer-events-none max-h-0 overflow-hidden opacity-0"}`}
+                >
+                    {links.map(([to, label, Icon]) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            end={to === "/"}
+                            tabIndex={mobileNavOpen ? 0 : -1}
+                            onClick={() => setMobileNavOpen(false)}
+                            className={({ isActive }) => `flex min-h-9 w-full shrink-0 items-center gap-2 rounded-[6px] px-3 py-2 text-[11px] font-medium ${isActive ? "bg-[#fff4b8] text-[#806900]" : "text-[#666] hover:bg-[#f7f7f7]"}`}
+                        >
+                            <Icon size={14} />
+                            {label === "Membership Plans" ? "Plans" : label}
+                        </NavLink>
+                    ))}
+                </nav>
             </header>
 
             {/* ========================================
@@ -322,17 +349,17 @@ export default function Layout() {
                         lg:flex
                     "
                 >
-                    <Notifications />
-
                     {/* User Box */}
                     <div
                         className="
+                            hidden
                             flex
                             items-center
                             gap-2.5
                             rounded-[8px]
                             px-2
                             py-1.5
+                            lg:flex
                         "
                     >
                         {/* Avatar */}
@@ -376,73 +403,21 @@ export default function Layout() {
                     PAGE CONTENT
                 ======================================== */}
                 <main
-    className="
+    className={`
         min-h-[calc(100vh-62px)]
         w-full
         px-4
         pb-8
-        pt-[122px]
+        pt-[62px]
         sm:px-5
         md:px-6
         lg:px-7
         lg:pt-6
-    "
+    `}
 >
     <Outlet />
 </main>
             </div>
-        </div>
-    );
-}
-
-function Notifications() {
-    const [open, setOpen] = useState(false);
-    const members = useSelector((state) => state.members.value);
-    const payments = useSelector((state) => state.payments.value);
-    const expiring = members.filter((member) => member.status === "Expiring").length;
-    const expired = members.filter((member) => member.status === "Expired").length;
-    const notifications = [
-        ...(expired ? [{ text: `${expired} membership${expired > 1 ? "s" : ""} expired`, to: "/renewals" }] : []),
-        ...(expiring ? [{ text: `${expiring} membership${expiring > 1 ? "s" : ""} expiring soon`, to: "/renewals" }] : []),
-        ...(payments.length ? [{ text: "Payment activity has been recorded", to: "/payments" }] : []),
-    ];
-
-    return (
-        <div className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#666] transition hover:bg-[#f5f5f5]"
-                aria-label="Notifications"
-                aria-expanded={open}
-            >
-                <Bell size={20} />
-                {notifications.length > 0 && (
-                    <span className="absolute right-[5px] top-[4px] flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d22d2d] px-1 text-[9px] font-semibold text-white">
-                        {notifications.length > 9 ? "9+" : notifications.length}
-                    </span>
-                )}
-            </button>
-
-            {open && (
-                <div className="absolute right-0 top-11 z-50 w-[260px] rounded-[8px] border border-[#e3e3e3] bg-white p-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
-                    <div className="border-b border-[#eee] px-2 pb-2 text-xs font-semibold text-[#222]">
-                        Notifications
-                    </div>
-                    {notifications.length ? notifications.map((notification) => (
-                        <NavLink
-                            key={notification.text}
-                            to={notification.to}
-                            onClick={() => setOpen(false)}
-                            className="block border-b border-[#f1f1f1] px-2 py-2.5 text-[11px] text-[#555] last:border-b-0 hover:bg-[#fff9db]"
-                        >
-                            {notification.text}
-                        </NavLink>
-                    )) : (
-                        <p className="px-2 py-3 text-[11px] text-[#888]">No new notifications.</p>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

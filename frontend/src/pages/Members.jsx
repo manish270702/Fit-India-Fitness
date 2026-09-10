@@ -13,6 +13,7 @@ import StatusBadge from "../components/StatusBadge.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { RemoveMember } from "../store/Slice/Members.Slice.js";
 import axios from 'axios';
+import { getMemberBalance } from "../utils/memberBalance";
 
 
 // ========================================
@@ -29,14 +30,22 @@ const formatDate = (date) => {
     });
 };
 
+const money = (amount) =>
+    new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
 
 function Members() {
     const navigate = useNavigate();
     const dispatch = useDispatch()
 
     const members = useSelector((state) => state.members.value);
+    const payments = useSelector((state) => state.payments.value);
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("All");
+    const [personalTrainingFilter, setPersonalTrainingFilter] = useState("All");
     const token = useSelector((state) => state.token.value)
 
 
@@ -57,13 +66,19 @@ function Members() {
                     .toLowerCase()
                     .includes(searchValue);
 
+            const hasPersonalTraining = Boolean(member.personalTraining || member.trainer);
+            const matchesPersonalTraining =
+                personalTrainingFilter === "All" ||
+                (personalTrainingFilter === "Yes" && hasPersonalTraining) ||
+                (personalTrainingFilter === "No" && !hasPersonalTraining);
+
             const matchesStatus =
                 status === "All" ||
                 member.status === status;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesPersonalTraining;
         });
-    }, [members, search, status]);
+    }, [members, search, status, personalTrainingFilter]);
 
 
     // ========================================
@@ -71,40 +86,40 @@ function Members() {
     // ========================================
 
     const deleteMember = async (id) => {
-    const member = members.find((m) => m._id === id);
+        const member = members.find((m) => m._id === id);
 
-    if (!member) return;
+        if (!member) return;
 
-    const confirmed = window.confirm(
-        `Are you sure you want to delete ${member.name}?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-        await axios.delete(
-            `http://localhost:5000/api/members/${id}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
+        const confirmed = window.confirm(
+            `Are you sure you want to delete ${member.name}?`
         );
 
-        dispatch(RemoveMember(id));
+        if (!confirmed) return;
 
-    } catch (error) {
-        console.error(
-            "Delete failed:",
-            error.response?.data || error.message
-        );
+        try {
+            await axios.delete(
+                `http://localhost:5000/api/members/${id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
-        alert(
-            error.response?.data?.message ||
-            "Failed to delete member"
-        );
-    }
-};
+            dispatch(RemoveMember(id));
+
+        } catch (error) {
+            console.error(
+                "Delete failed:",
+                error.response?.data || error.message
+            );
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to delete member"
+            );
+        }
+    };
 
 
     // ========================================
@@ -370,6 +385,16 @@ function Members() {
                     </option>
                 </select>
 
+                <select
+                    value={personalTrainingFilter}
+                    onChange={(e) => setPersonalTrainingFilter(e.target.value)}
+                    className="h-10 w-full rounded-[7px] border border-[#ddd] bg-white px-3 text-xs text-[#444] outline-none focus:border-[#c9aa00] focus:ring-2 focus:ring-[#fff3a8] sm:w-auto"
+                >
+                    <option value="All">Personal Training: All</option>
+                    <option value="Yes">Taking Personal Training</option>
+                    <option value="No">No Personal Training</option>
+                </select>
+
 
                 {/* Export */}
 
@@ -442,7 +467,7 @@ function Members() {
                     <table
                         className="
                             w-full
-                            min-w-[850px]
+                            min-w-[1050px]
                             border-collapse
                             text-left
                         "
@@ -500,6 +525,12 @@ function Members() {
                                     PLAN
                                 </th>
 
+                                <th
+                                    className="h-[46px] px-[18px] text-left text-[10px] font-semibold tracking-[0.4px] text-[#777]"
+                                >
+                                    PERSONAL TRAINER
+                                </th>
+
                                 {/* <th
                                     className="
                                         h-[46px]
@@ -526,6 +557,20 @@ function Members() {
                                     "
                                 >
                                     EXPIRY
+                                </th>
+
+                                <th
+                                    className="
+                                        h-[46px]
+                                        px-[18px]
+                                        text-left
+                                        text-[10px]
+                                        font-semibold
+                                        tracking-[0.4px]
+                                        text-[#777]
+                                    "
+                                >
+                                    DUE
                                 </th>
 
                                 <th
@@ -603,11 +648,14 @@ function Members() {
                                                         text-xs
                                                         font-bold
                                                         text-[#555]
+                                                        overflow-hidden
                                                     "
                                                 >
-                                                    {member.name
+                                                    <img src={member?.photo} alt={member?.photo
                                                         ?.charAt(0)
-                                                        ?.toUpperCase()}
+                                                        ?.toUpperCase()} 
+                                                        className="w-full h-full object-cover" />
+
                                                 </div>
 
                                                 <div className="min-w-0">
@@ -636,7 +684,6 @@ function Members() {
                                                 </div>
                                             </div>
                                         </td>
-
 
                                         {/* Phone */}
 
@@ -679,6 +726,25 @@ function Members() {
                                             </span>
                                         </td>
 
+                                        {/* Personal Trainer */}
+
+                                        <td className="px-[18px] py-3.5 text-xs text-[#444]">
+                                            {member.personalTraining || member.trainer ? (
+                                                <div>
+                                                    <span className="font-medium text-[#222]">
+                                                        {member.trainer?.name || "Trainer not assigned"}
+                                                    </span>
+                                                    {member.personalTrainingPlan?.name && (
+                                                        <span className="mt-1 block text-[10px] text-[#999]">
+                                                            {member.personalTrainingPlan.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                "—"
+                                            )}
+                                        </td>
+
 
                                         {/* Start */}
 
@@ -711,6 +777,21 @@ function Members() {
                                             {formatDate(
                                                 member.membershipEnd
                                             )}
+                                        </td>
+
+                                        {/* Due */}
+
+                                        <td className="whitespace-nowrap px-[18px] py-3.5 text-xs font-semibold">
+                                            {(() => {
+                                                const balance = getMemberBalance(member, payments);
+                                                return balance.advance > 0 ? (
+                                                    <span className="text-blue-600">Advance {money(balance.advance)}</span>
+                                                ) : (
+                                                    <span className={balance.due > 0 ? "text-red-600" : "text-green-600"}>
+                                                        {money(balance.due)}
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
 
 
@@ -834,7 +915,7 @@ function Members() {
                             {filteredMembers.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={9}
                                         className="
                                             h-[140px]
                                             px-4

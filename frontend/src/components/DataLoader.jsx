@@ -7,6 +7,8 @@ import { mountMembers } from "../store/Slice/Members.Slice";
 import { mountPayments } from "../store/Slice/Payment.Slice";
 import { mountToken } from "../store/Slice/Token.Slice";
 import { mountUser } from "../store/Slice/User.Slice";
+import { mountTrainers } from "../store/Slice/Trainer.Slice";
+import { mountPersonalTrainingPlans } from "../store/Slice/PersonalTrainingPlan.Slice";
 
 export default function DataLoader({ children }) {
     const dispatch = useDispatch();
@@ -39,7 +41,7 @@ export default function DataLoader({ children }) {
 
         const loadData = async () => {
             try {
-                const [plansRes, membersRes, paymentsRes] =
+                const [plansRes, membersRes, paymentsRes, trainersRes, personalTrainingPlansRes] =
                     await Promise.all([
                         axios.get(
                             "http://localhost:5000/api/plans",
@@ -67,11 +69,21 @@ export default function DataLoader({ children }) {
                                 },
                             }
                         ),
+                        axios.get(
+                            "http://localhost:5000/api/trainers",
+                            { headers: { authorization: `Bearer ${token}` } }
+                        ),
+                        axios.get(
+                            "http://localhost:5000/api/personal-training-plans",
+                            { headers: { authorization: `Bearer ${token}` } }
+                        ),
                     ]);
 
                 dispatch(mountPlans(plansRes.data.plans));
                 dispatch(mountMembers(membersRes.data.members));
                 dispatch(mountPayments(paymentsRes.data.payments));
+                dispatch(mountTrainers(trainersRes.data.trainers));
+                dispatch(mountPersonalTrainingPlans(personalTrainingPlansRes.data.plans));
             } catch (error) {
                 console.error(
                     "Failed to load application data:",

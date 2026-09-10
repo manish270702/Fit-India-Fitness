@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema({
   member: { type: mongoose.Schema.Types.ObjectId, ref: "Member", required: true, index: true },
   plan: { type: mongoose.Schema.Types.ObjectId, ref: "Plan" },
+  membershipPeriodStart: { type: Date, index: true },
+  membershipPeriodFee: { type: Number, min: 0 },
   amount: { type: Number, required: true, min: 0 },
   method: { type: String, enum: ["Cash", "UPI", "Bank Transfer", "Card", "Other"], required: true },
   transactionId: String,

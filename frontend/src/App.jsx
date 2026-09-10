@@ -15,6 +15,7 @@ import MemberDetail from "./pages/MemberDetail.jsx";
 import Renewals from "./pages/Renewals.jsx";
 import Payments from "./pages/Payments.jsx";
 import Plans from "./pages/Plans.jsx";
+import PersonalTrainingPlans from "./pages/PersonalTrainingPlans.jsx";
 import Trainers from "./pages/Trainers.jsx";
 import Reports from "./pages/Reports.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -115,6 +116,11 @@ function Router() {
                     <Route
                         path="/plans"
                         element={<Plans />}
+                    />
+
+                    <Route
+                        path="/personal-training-plans"
+                        element={<PersonalTrainingPlans />}
                     />
 
                     {/* Trainers */}

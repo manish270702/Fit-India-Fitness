@@ -4,6 +4,8 @@ import tokenReducer from "./Slice/Token.Slice"
 import planReducer from "./Slice/Plans.Slice"
 import memberReducer from "./Slice/Members.Slice"
 import paymentReducer from "./Slice/Payment.Slice"
+import trainerReducer from "./Slice/Trainer.Slice"
+import personalTrainingPlanReducer from "./Slice/PersonalTrainingPlan.Slice"
 
 
 export const store = configureStore({
@@ -12,6 +14,8 @@ export const store = configureStore({
     token:tokenReducer,
     plans:planReducer,
     members:memberReducer,
-    payments:paymentReducer
+    payments:paymentReducer,
+    trainers:trainerReducer,
+    personalTrainingPlans:personalTrainingPlanReducer
   }
 })

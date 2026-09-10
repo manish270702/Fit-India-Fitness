@@ -1,50 +1,18 @@
 import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 
 import Modal from "../components/Modal.jsx";
+import { addTrainer, removeTrainer, updateTrainer } from "../store/Slice/Trainer.Slice";
 
 export default function Trainers() {
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(null);
-
-    // ========================================
-    // STATIC TRAINERS
-    // ========================================
-    const [items, setItems] = useState([
-        {
-            id: "1",
-            name: "Rahul Sharma",
-            phone: "9876543210",
-            specialization: "Weight Training",
-            salary: 25000,
-            status: "Active",
-        },
-        {
-            id: "2",
-            name: "Amit Verma",
-            phone: "9876543211",
-            specialization: "Cardio & Fitness",
-            salary: 22000,
-            status: "Active",
-        },
-        {
-            id: "3",
-            name: "Priya Singh",
-            phone: "9876543212",
-            specialization: "Yoga & Flexibility",
-            salary: 20000,
-            status: "Active",
-        },
-        {
-            id: "4",
-            name: "Vikas Meena",
-            phone: "9876543213",
-            specialization: "Strength Training",
-            salary: 24000,
-            status: "Inactive",
-        },
-    ]);
+    const dispatch = useDispatch();
+    const items = useSelector((state) => state.trainers.value);
+    const token = useSelector((state) => state.token.value);
 
     // ========================================
     // REACT HOOK FORM
@@ -101,57 +69,46 @@ export default function Trainers() {
     // ========================================
     // SAVE TRAINER
     // ========================================
-    const save = (data) => {
+    const save = async (data) => {
         const trainerData = {
             ...data,
             salary: Number(data.salary) || 0,
         };
 
-        if (edit) {
-            // Update existing trainer
-            setItems((prev) =>
-                prev.map((trainer) =>
-                    trainer.id === edit.id
-                        ? {
-                              ...trainer,
-                              ...trainerData,
-                          }
-                        : trainer
-                )
-            );
-        } else {
-            // Add new trainer
-            const newTrainer = {
-                id: crypto.randomUUID(),
-                ...trainerData,
-            };
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const response = edit
+                ? await axios.put(`http://localhost:5000/api/trainers/${edit._id}`, trainerData, config)
+                : await axios.post("http://localhost:5000/api/trainers", trainerData, config);
 
-            setItems((prev) => [
-                ...prev,
-                newTrainer,
-            ]);
+            if (edit) dispatch(updateTrainer(response.data.trainer));
+            else dispatch(addTrainer(response.data.trainer));
+            setOpen(false);
+            setEdit(null);
+            reset();
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to save trainer");
         }
-
-        setOpen(false);
-        setEdit(null);
-        reset();
     };
 
     // ========================================
     // DELETE TRAINER
     // ========================================
-    const remove = (id) => {
+    const remove = async (id) => {
         const confirmed = window.confirm(
             "Delete trainer?"
         );
 
         if (!confirmed) return;
 
-        setItems((prev) =>
-            prev.filter(
-                (trainer) => trainer.id !== id
-            )
-        );
+        try {
+            await axios.delete(`http://localhost:5000/api/trainers/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            dispatch(removeTrainer(id));
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to delete trainer");
+        }
     };
 
     return (
@@ -263,7 +220,7 @@ export default function Trainers() {
                         <tbody>
                             {items.map((trainer) => (
                                 <tr
-                                    key={trainer.id}
+                                    key={trainer._id}
                                     className="
                                         border-b
                                         border-[#eee]
@@ -384,7 +341,7 @@ export default function Trainers() {
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    remove(trainer.id)
+                                                    remove(trainer._id)
                                                 }
                                                 className="
                                                     flex

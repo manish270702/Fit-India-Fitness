@@ -9,6 +9,7 @@ import {
     Users,
     RefreshCcw,
     CreditCard,
+    Dumbbell,
     FileBarChart,
     Settings,
     LogOut,
@@ -28,8 +29,9 @@ const links = [
     ["/members", "Members", Users],
     ["/renewals", "Renewals", RefreshCcw],
     ["/payments", "Payments", CreditCard],
-    // ["/trainers", "Trainers", Dumbbell],
+    ["/trainers", "Trainers", Dumbbell],
     ["/plans", "Membership Plans", FileBarChart],
+    ["/personal-training-plans", "Personal Training Plans", Dumbbell],
     ["/reports", "Reports", FileBarChart],
     ["/settings", "Settings", Settings],
 ];

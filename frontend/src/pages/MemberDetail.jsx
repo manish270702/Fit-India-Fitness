@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
@@ -8,6 +8,7 @@ import {
     MapPin,
     CalendarDays,
     RefreshCcw,
+    Dumbbell,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -16,6 +17,7 @@ import Modal from "../components/Modal.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { AddPayment } from "../store/Slice/Payment.Slice";
 import { UpdateMember } from "../store/Slice/Members.Slice";
+import { getMemberBalance } from "../utils/memberBalance";
 
 const money = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -33,6 +35,9 @@ const formatDate = (d) =>
         })
         : "—";
 
+const paymentMemberId = (payment) =>
+    payment.member?._id?.toString() || payment.member?.toString();
+
 export default function MemberDetail() {
     const { id } = useParams();
     const nav = useNavigate();
@@ -44,16 +49,47 @@ export default function MemberDetail() {
     const member = members.find((m) => m._id === id)
     // Static payment history
     const allPayments = useSelector((state) => state.payments.value);
+    const token = useSelector((state) => state.token.value);
+    const [loadedPayments, setLoadedPayments] = useState([]);
 
-    const payments = allPayments.filter(
-        (p) => p.member?._id?.toString() === id
+    useEffect(() => {
+        if (!id || !token) return;
+
+        const loadMemberPayments = async () => {
+            try {
+                const response = await axios.get(
+                    `http://localhost:5000/api/members/${id}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setLoadedPayments(response.data.payments || []);
+            } catch (error) {
+                console.error("Failed to load member payments:", error);
+            }
+        };
+
+        loadMemberPayments();
+    }, [id, token]);
+
+    const paymentsById = new Map(
+        [...loadedPayments, ...allPayments].map((payment) => [payment._id, payment])
     );
+
+    const payments = [...paymentsById.values()].filter(
+        (p) => paymentMemberId(p) === id
+    );
+
+    const balance = getMemberBalance(member, payments);
+    const totalPaid = balance.totalPaid;
+    const amountDue = balance.due;
+    const advanceAmount = balance.advance;
 
 
     const plans = useSelector((state) => state.plans.value);
+    const personalTrainingPlans = useSelector((state) => state.personalTrainingPlans.value);
     const {
         register,
         handleSubmit,
+        watch,
         reset,
         formState: { errors, isSubmitting },
     } = useForm({
@@ -62,11 +98,12 @@ export default function MemberDetail() {
             amount: "",
             method: "Cash",
             transactionId: "",
+            personalTraining: false,
+            personalTrainingPlanId: "",
         },
     });
 
     // Renew form submit
-    const token = useSelector((state) => state.token.value);
     const dispatch = useDispatch();
 
     if (!member) {
@@ -83,6 +120,8 @@ export default function MemberDetail() {
                 `http://localhost:5000/api/members/${id}/renew`,
                 {
                     planId: data.planId,
+                    personalTrainingPlanId: data.personalTrainingPlanId,
+                    personalTraining: data.personalTraining,
                     amount: Number(data.amount),
                     method: data.method,
                     transactionId: data.transactionId,
@@ -182,7 +221,11 @@ export default function MemberDetail() {
                             sm:w-[55px]
                         "
                     >
-                        {member.name.charAt(0)}
+                        {member.photo ? (
+                            <img src={member.photo} alt={`${member.name} profile`} className="h-full w-full object-cover" />
+                        ) : (
+                            member.name.charAt(0)
+                        )}
                     </div>
 
                     <div className="min-w-0">
@@ -239,9 +282,14 @@ export default function MemberDetail() {
                         onClick={() => {
                             reset({
                                 planId: member.currentPlan?._id || "",
-                                amount: member.currentPlan?.price || "",
+                                amount: Number(member.currentPlan?.price || 0) +
+                                    (member.personalTraining
+                                        ? Number(member.personalTrainingPlan?.price || member.currentPlan?.personalTrainingPrice || 0)
+                                        : 0),
                                 method: "Cash",
                                 transactionId: "",
+                                personalTraining: member.personalTraining || false,
+                                personalTrainingPlanId: member.personalTrainingPlan?._id || "",
                             });
 
                             setRenew(true);
@@ -341,8 +389,28 @@ export default function MemberDetail() {
                         <Info
                             label="Price"
                             value={money(
-                                member.currentPlan?.price
+                                Number(member.currentPlan?.price || 0) +
+                                (member.personalTraining
+                                    ? Number(member.personalTrainingPlan?.price || member.currentPlan?.personalTrainingPrice || 0)
+                                    : 0)
                             )}
+                        />
+
+                        <Info
+                            label="Paid"
+                            value={money(totalPaid)}
+                        />
+
+                        <Info
+                            label="Due"
+                            value={money(amountDue)}
+                            valueClass={amountDue > 0 ? "text-red-600" : "text-green-600"}
+                        />
+
+                        <Info
+                            label="Advance"
+                            value={money(advanceAmount)}
+                            valueClass={advanceAmount > 0 ? "text-blue-600" : "text-[#222]"}
                         />
 
                         <Info
@@ -408,6 +476,17 @@ export default function MemberDetail() {
                             <span>
                                 Joined{" "}
                                 {formatDate(member.joiningDate)}
+                            </span>
+                        </p>
+
+                        <p className="mt-4 flex items-start gap-2 text-xs text-[#555]">
+                            <Dumbbell
+                                size={16}
+                                className="mt-0.5 shrink-0"
+                            />
+
+                            <span>
+                                {member.trainer?.name || "No personal trainer"}
                             </span>
                         </p>
                     </div>
@@ -634,6 +713,9 @@ export default function MemberDetail() {
                                     value={plan._id}
                                 >
                                     {plan.name} — ₹{plan.price}
+                                    {plan.personalTrainingPrice > 0
+                                        ? ` (+₹${plan.personalTrainingPrice} PT)`
+                                        : ""}
                                 </option>
                             ))}
                         </select>
@@ -644,6 +726,28 @@ export default function MemberDetail() {
                             </p>
                         )}
                     </div>
+
+                    {/* Amount */}
+                    <div>
+                        <label className="mb-1.5 block text-[11px] text-[#666]">Personal Training Plan</label>
+                        <select {...register("personalTrainingPlanId")} className="h-10 w-full rounded-[7px] border border-[#ddd] bg-white px-3 text-xs text-[#444]">
+                            <option value="">No personal training plan</option>
+                            {personalTrainingPlans
+                                .filter((plan) => plan.active && plan.durationMonths === plans.find((item) => item._id === watch("planId"))?.durationMonths)
+                                .map((plan) => <option key={plan._id} value={plan._id}>{plan.name} — ₹{plan.price}</option>)}
+                        </select>
+                    </div>
+
+                    {/* Amount */}
+                    <label className="flex items-center gap-2 text-xs text-[#555]">
+                        <input type="checkbox" {...register("personalTraining")} />
+                        Include personal training
+                        {plans.find((plan) => plan._id === (watch("planId"))) && (
+                            <span className="text-[10px] text-[#888]">
+                                (+₹{plans.find((plan) => plan._id === watch("planId"))?.personalTrainingPrice || 0})
+                            </span>
+                        )}
+                    </label>
 
                     {/* Amount */}
                     <div>
@@ -820,7 +924,7 @@ export default function MemberDetail() {
 }
 
 
-function Info({ label, value }) {
+function Info({ label, value, valueClass = "text-[#222]" }) {
     return (
         <div
             className="
@@ -834,7 +938,7 @@ function Info({ label, value }) {
                 {label}
             </span>
 
-            <b className="block break-words text-[13px] font-semibold text-[#222]">
+            <b className={`block break-words text-[13px] font-semibold ${valueClass}`}>
                 {value}
             </b>
         </div>

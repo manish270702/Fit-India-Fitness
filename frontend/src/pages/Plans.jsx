@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
 import Modal from "../components/Modal.jsx";
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,6 +19,7 @@ export default  function Plans() {
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(null);
     const plans = useSelector((state) => state.plans.value);
+    const token = useSelector((state) => state.token.value);
     const dispatch = useDispatch();
     const {
         register,
@@ -28,6 +31,7 @@ export default  function Plans() {
             name: "",
             durationMonths: 1,
             price: "",
+            personalTrainingPrice: "",
             description: "",
             active: true,
         },
@@ -43,6 +47,7 @@ export default  function Plans() {
             name: "",
             durationMonths: 1,
             price: "",
+            personalTrainingPrice: "",
             description: "",
             active: true,
         });
@@ -60,6 +65,7 @@ export default  function Plans() {
             name: plan.name,
             durationMonths: plan.durationMonths,
             price: plan.price,
+            personalTrainingPrice: plan.personalTrainingPrice || 0,
             description: plan.description || "",
             active: plan.active,
         });
@@ -70,47 +76,49 @@ export default  function Plans() {
     // ========================================
     // SAVE / UPDATE PLAN
     // ========================================
-    const save = (data) => {
+    const save = async (data) => {
         const planData = {
             ...data,
             durationMonths: Number(data.durationMonths),
             price: Number(data.price),
+            personalTrainingPrice: Number(data.personalTrainingPrice) || 0,
         };
 
-        if (edit) {
-            // Update existing plan
-            dispatch(UpdatePlan({ ...edit, ...planData }));
-        } else {
-            // Add new plan
-            const newPlan = {
-                _id: crypto.randomUUID(),
-                ...planData,
-            };
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const response = edit
+                ? await axios.put(`http://localhost:5000/api/plans/${edit._id}`, planData, config)
+                : await axios.post("http://localhost:5000/api/plans", planData, config);
 
-            // setPlans((prev) => [
-            //     ...prev,
-            //     newPlan,
-            // ]);
+            if (edit) dispatch(UpdatePlan(response.data.plan));
+            else dispatch(AddPlan(response.data.plan));
 
-            dispatch(AddPlan(newPlan));
+            setOpen(false);
+            setEdit(null);
+            reset();
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to save plan");
         }
-
-        setOpen(false);
-        setEdit(null);
-        reset();
     };
 
     // ========================================
     // DELETE PLAN
     // ========================================
-    const remove = (id) => {
+    const remove = async (id) => {
         const confirmed = window.confirm(
             "Are you sure you want to delete this plan?"
         );
 
         if (!confirmed) return;
 
-        dispatch(RemovePlan(id));
+        try {
+            await axios.delete(`http://localhost:5000/api/plans/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            dispatch(RemovePlan(id));
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to delete plan");
+        }
     };
 
     return (
@@ -175,6 +183,18 @@ export default  function Plans() {
                 </button>
             </div>
 
+            <div className="mb-5 flex w-full max-w-fit items-center gap-1 rounded-[8px] border border-[#e3e3e3] bg-white p-1">
+                <span className="rounded-[6px] bg-[#fff4b8] px-3 py-2 text-[11px] font-semibold text-[#806900]">
+                    Gym Membership Plans
+                </span>
+                <Link
+                    to="/personal-training-plans"
+                    className="rounded-[6px] px-3 py-2 text-[11px] font-medium text-[#777] no-underline transition hover:bg-[#f7f7f7] hover:text-[#222]"
+                >
+                    Personal Training Plans
+                </Link>
+            </div>
+
             {/* ========================================
                 PLANS GRID
             ======================================== */}
@@ -189,7 +209,7 @@ export default  function Plans() {
             >
                 {plans.map((plan) => (
                     <div
-                        key={plan.id}
+                        key={plan._id}
                         className="
                             flex
                             min-h-[260px]
@@ -258,6 +278,10 @@ export default  function Plans() {
                                 {plan.durationMonths > 1 ? "s" : ""}
                             </small>
                         </div>
+
+                        <p className="mt-2 text-[11px] text-[#777]">
+                            Personal training: {money(plan.personalTrainingPrice)} for this plan period
+                        </p>
 
                         {/* Description */}
                         <p
@@ -480,6 +504,32 @@ export default  function Plans() {
                             )}
                         </div>
                     </div>
+
+                        {/* Personal Training Add-on */}
+                        <div>
+                            <label className="mb-1.5 block text-[11px] font-medium text-[#666]">
+                                Personal Training Add-on (₹)
+                            </label>
+
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Optional add-on price"
+                                {...register("personalTrainingPrice", {
+                                    min: {
+                                        value: 0,
+                                        message: "Price cannot be negative",
+                                    },
+                                })}
+                                className={inputClass(errors.personalTrainingPrice)}
+                            />
+
+                            {errors.personalTrainingPrice && (
+                                <p className="mt-1 text-[10px] text-red-500">
+                                    {errors.personalTrainingPrice.message}
+                                </p>
+                            )}
+                        </div>
 
                     {/* Description */}
                     <div>

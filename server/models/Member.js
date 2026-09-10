@@ -9,6 +9,8 @@ const schema = new mongoose.Schema({
   joiningDate: { type: Date, default: Date.now },
   timeSlot: String,
   trainer: { type: mongoose.Schema.Types.ObjectId, ref: "Trainer", default: null },
+  personalTraining: { type: Boolean, default: false },
+  personalTrainingPlan: { type: mongoose.Schema.Types.ObjectId, ref: "PersonalTrainingPlan", default: null },
   currentPlan: { type: mongoose.Schema.Types.ObjectId, ref: "Plan", default: null },
   membershipStart: Date,
   membershipEnd: Date,

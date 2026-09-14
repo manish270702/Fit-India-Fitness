@@ -9,6 +9,15 @@ const paymentPeriodKey = (payment) => {
 };
 
 export function getMemberBalance(member, payments) {
+    if (member?.financials) {
+        return {
+            totalFees: Number(member.financials.totalFees || 0),
+            totalPaid: Number(member.financials.totalPaid || 0),
+            due: Number(member.financials.due || 0),
+            advance: Number(member.financials.advance || 0),
+        };
+    }
+
     const memberPayments = payments.filter(
         (payment) => paymentMemberId(payment) === member?._id?.toString()
     );

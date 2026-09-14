@@ -14,6 +14,15 @@ const schema = new mongoose.Schema({
   currentPlan: { type: mongoose.Schema.Types.ObjectId, ref: "Plan", default: null },
   membershipStart: Date,
   membershipEnd: Date,
+  financials: {
+    type: new mongoose.Schema({
+      totalFees: { type: Number, default: 0, min: 0 },
+      totalPaid: { type: Number, default: 0, min: 0 },
+      due: { type: Number, default: 0, min: 0 },
+      advance: { type: Number, default: 0, min: 0 }
+    }, { _id: false }),
+    default: null
+  },
   status: { type: String, enum: ["Active", "Expiring", "Expired", "Inactive"], default: "Active" },
   notes: String
 }, { timestamps: true });

@@ -75,6 +75,12 @@ export async function createMember(req, res) {
     }
   }
   member.refreshStatus();
+  member.financials = {
+    totalFees: membershipPeriodFee,
+    totalPaid: Number(paymentAmount) || 0,
+    due: Math.max(membershipPeriodFee - (Number(paymentAmount) || 0), 0),
+    advance: Math.max((Number(paymentAmount) || 0) - membershipPeriodFee, 0)
+  };
   await member.save();
 
   let payment;
@@ -82,8 +88,6 @@ export async function createMember(req, res) {
     payment = await Payment.create({
       member: member._id,
       plan: member.currentPlan,
-      membershipPeriodStart: member.membershipStart,
-      membershipPeriodFee,
       amount: Number(paymentAmount),
       method: paymentMethod || "Cash",
       transactionId
@@ -164,13 +168,38 @@ export async function renewMember(req, res) {
   member.personalTrainingPlan = personalTrainingPlan?._id || null;
   member.membershipStart = start;
   member.membershipEnd = end;
+  if (member.financials) {
+    const membershipPeriodFee = plan.price + (personalTrainingPlan?.price || (personalTraining ? plan.personalTrainingPrice : 0));
+    const renewalPayment = Number(amount) || 0;
+    const totalFees = Number(member.financials.totalFees || 0) + membershipPeriodFee;
+    const totalPaid = Number(member.financials.totalPaid || 0) + renewalPayment;
+    const balance = totalFees - totalPaid;
+    member.financials = {
+      totalFees,
+      totalPaid,
+      due: Math.max(balance, 0),
+      advance: Math.max(-balance, 0)
+    };
+  }
   member.refreshStatus();
   await member.save();
 
   let payment;
   if (Number(amount) > 0) {
-    const personalTrainingFee = personalTrainingPlan?.price || (personalTraining ? plan.personalTrainingPrice : 0);
-    payment = await Payment.create({ member: member._id, plan: plan._id, membershipPeriodStart: start, membershipPeriodFee: plan.price + personalTrainingFee, amount: Number(amount), method: method || "Cash", transactionId, note: note || "Membership renewal" });
+    const paymentData = {
+      member: member._id,
+      plan: plan._id,
+      amount: Number(amount),
+      method: method || "Cash",
+      transactionId,
+      note: note || "Membership renewal"
+    };
+    if (!member.financials) {
+      const personalTrainingFee = personalTrainingPlan?.price || (personalTraining ? plan.personalTrainingPrice : 0);
+      paymentData.membershipPeriodStart = start;
+      paymentData.membershipPeriodFee = plan.price + personalTrainingFee;
+    }
+    payment = await Payment.create(paymentData);
     payment = await payment.populate([
       { path: "member", select: "name phone" },
       { path: "plan", select: "name" }

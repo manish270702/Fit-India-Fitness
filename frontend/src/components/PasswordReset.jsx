@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 
 export default function PasswordReset() {
     const token = useSelector((state) => state.token.value);
+    const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState(null);
     const {
         register,
@@ -40,10 +41,23 @@ export default function PasswordReset() {
 
     return (
         <section className="mt-8 border-t border-[#eee] pt-6">
-            <h2 className="text-[15px] font-semibold text-[#222]">Change password</h2>
-            <p className="mt-1 text-[11px] text-[#999]">Update your account password.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className="text-[15px] font-semibold text-[#222]">Change password</h2>
+                    <p className="mt-1 text-[11px] text-[#999]">Update your account password.</p>
+                </div>
+                {!isOpen && (
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(true)}
+                        className="h-9 w-fit rounded-[7px] border border-[#ddd] px-3 text-xs font-semibold text-[#333] hover:border-[#c9aa00] hover:bg-[#fffbea]"
+                    >
+                        Change password
+                    </button>
+                )}
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-4 grid max-w-[420px] gap-3">
+            {isOpen && <form onSubmit={handleSubmit(onSubmit)} className="mt-4 grid max-w-[420px] gap-3">
                 <PasswordField
                     label="Current password"
                     error={errors.currentPassword?.message}
@@ -79,7 +93,18 @@ export default function PasswordReset() {
                 >
                     {isSubmitting ? "Updating..." : "Update password"}
                 </button>
-            </form>
+                <button
+                    type="button"
+                    onClick={() => {
+                        reset();
+                        setMessage(null);
+                        setIsOpen(false);
+                    }}
+                    className="w-fit text-xs font-medium text-[#777] underline underline-offset-2 hover:text-[#333]"
+                >
+                    Cancel
+                </button>
+            </form>}
         </section>
     );
 }

@@ -87,8 +87,8 @@ export default  function Plans() {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const response = edit
-                ? await axios.put(`http://localhost:5000/api/plans/${edit._id}`, planData, config)
-                : await axios.post("http://localhost:5000/api/plans", planData, config);
+                ? await axios.put(`${import.meta.env.VITE_API_URL}/api/plans/${edit._id}`, planData, config)
+                : await axios.post(`${import.meta.env.VITE_API_URL}/api/plans`, planData, config);
 
             if (edit) dispatch(UpdatePlan(response.data.plan));
             else dispatch(AddPlan(response.data.plan));
@@ -112,7 +112,7 @@ export default  function Plans() {
         if (!confirmed) return;
 
         try {
-            await axios.delete(`http://localhost:5000/api/plans/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/plans/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             dispatch(RemovePlan(id));

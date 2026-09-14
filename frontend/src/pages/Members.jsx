@@ -98,7 +98,7 @@ function Members() {
 
         try {
             await axios.delete(
-                `http://localhost:5000/api/members/${id}`,
+                `${import.meta.env.VITE_API_URL}/api/members/${id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,

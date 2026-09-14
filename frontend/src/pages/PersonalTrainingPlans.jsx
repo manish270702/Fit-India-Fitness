@@ -27,8 +27,8 @@ export default function PersonalTrainingPlans() {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const response = edit
-                ? await axios.put(`http://localhost:5000/api/personal-training-plans/${edit._id}`, payload, config)
-                : await axios.post("http://localhost:5000/api/personal-training-plans", payload, config);
+                ? await axios.put(`${import.meta.env.VITE_API_URL}/api/personal-training-plans/${edit._id}`, payload, config)
+                : await axios.post(`${import.meta.env.VITE_API_URL}/api/personal-training-plans`, payload, config);
             dispatch(edit ? updatePersonalTrainingPlan(response.data.plan) : addPersonalTrainingPlan(response.data.plan));
             close();
         } catch (error) { alert(error.response?.data?.message || "Failed to save personal training plan"); }
@@ -36,7 +36,7 @@ export default function PersonalTrainingPlans() {
     const remove = async (id) => {
         if (!window.confirm("Delete this personal training plan?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/personal-training-plans/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/personal-training-plans/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             dispatch(removePersonalTrainingPlan(id));
         } catch (error) { alert(error.response?.data?.message || "Failed to delete personal training plan"); }
     };

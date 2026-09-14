@@ -58,7 +58,7 @@ export default function MemberDetail() {
         const loadMemberPayments = async () => {
             try {
                 const response = await axios.get(
-                    `http://localhost:5000/api/members/${id}`,
+                    `${import.meta.env.VITE_API_URL}/api/members/${id}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setLoadedPayments(response.data.payments || []);
@@ -117,7 +117,7 @@ export default function MemberDetail() {
     const onRenew = async (data) => {
         try {
             const res = await axios.post(
-                `http://localhost:5000/api/members/${id}/renew`,
+                `${import.meta.env.VITE_API_URL}/api/members/${id}/renew`,
                 {
                     planId: data.planId,
                     personalTrainingPlanId: data.personalTrainingPlanId,

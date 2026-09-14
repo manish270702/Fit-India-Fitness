@@ -45,7 +45,7 @@ export default function Dues() {
         setIsSubmitting(true);
         try {
             const response = await axios.post(
-                "http://localhost:5000/api/payments",
+                `${import.meta.env.VITE_API_URL}/api/payments`,
                 {
                     member: selectedMember._id,
                     amount: selectedMember.balance.due,

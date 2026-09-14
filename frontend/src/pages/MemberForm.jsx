@@ -142,7 +142,7 @@ export default function MemberForm() {
             if (photoFile) {
                 const optimizedPhoto = await optimizePhoto(photoFile);
                 const auth = await axios.get(
-                    "http://localhost:5000/api/uploads/imagekit/auth",
+                    `${import.meta.env.VITE_API_URL}/api/uploads/imagekit/auth`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const uploadData = new FormData();
@@ -164,10 +164,10 @@ export default function MemberForm() {
 
             const payload = { ...data, photo, trainer: data.trainer || null };
             const res = edit
-                ? await axios.put(`http://localhost:5000/api/members/${id}`, payload, {
+                ? await axios.put(`${import.meta.env.VITE_API_URL}/api/members/${id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
-                : await axios.post("http://localhost:5000/api/members", payload, {
+                : await axios.post(`${import.meta.env.VITE_API_URL}/api/members`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 

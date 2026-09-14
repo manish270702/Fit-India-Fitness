@@ -44,7 +44,7 @@ export default function DataLoader({ children }) {
                 const [plansRes, membersRes, paymentsRes, trainersRes, personalTrainingPlansRes] =
                     await Promise.all([
                         axios.get(
-                            "http://localhost:5000/api/plans",
+                            `${import.meta.env.VITE_API_URL}/api/plans`,
                             {
                                 headers: {
                                     authorization: `Bearer ${token}`,
@@ -53,7 +53,7 @@ export default function DataLoader({ children }) {
                         ),
 
                         axios.get(
-                            "http://localhost:5000/api/members",
+                            `${import.meta.env.VITE_API_URL}/api/members`,
                             {
                                 headers: {
                                     authorization: `Bearer ${token}`,
@@ -62,7 +62,7 @@ export default function DataLoader({ children }) {
                         ),
 
                         axios.get(
-                            "http://localhost:5000/api/payments",
+                            `${import.meta.env.VITE_API_URL}/api/payments`,
                             {
                                 headers: {
                                     authorization: `Bearer ${token}`,
@@ -70,11 +70,11 @@ export default function DataLoader({ children }) {
                             }
                         ),
                         axios.get(
-                            "http://localhost:5000/api/trainers",
+                            `${import.meta.env.VITE_API_URL}/api/trainers`,
                             { headers: { authorization: `Bearer ${token}` } }
                         ),
                         axios.get(
-                            "http://localhost:5000/api/personal-training-plans",
+                            `${import.meta.env.VITE_API_URL}/api/personal-training-plans`,
                             { headers: { authorization: `Bearer ${token}` } }
                         ),
                     ]);

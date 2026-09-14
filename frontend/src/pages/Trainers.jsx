@@ -78,8 +78,8 @@ export default function Trainers() {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const response = edit
-                ? await axios.put(`http://localhost:5000/api/trainers/${edit._id}`, trainerData, config)
-                : await axios.post("http://localhost:5000/api/trainers", trainerData, config);
+                ? await axios.put(`${import.meta.env.VITE_API_URL}/api/trainers/${edit._id}`, trainerData, config)
+                : await axios.post(`${import.meta.env.VITE_API_URL}/api/trainers`, trainerData, config);
 
             if (edit) dispatch(updateTrainer(response.data.trainer));
             else dispatch(addTrainer(response.data.trainer));
@@ -102,7 +102,7 @@ export default function Trainers() {
         if (!confirmed) return;
 
         try {
-            await axios.delete(`http://localhost:5000/api/trainers/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/trainers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             dispatch(removeTrainer(id));

@@ -114,7 +114,7 @@ export default function Payments() {
 
         try {
             const response = await axios.post(
-                "http://localhost:5000/api/payments",
+                `${import.meta.env.VITE_API_URL}/api/payments`,
                 {
                     member: selectedMember._id,
                     amount: Number(data.amount),

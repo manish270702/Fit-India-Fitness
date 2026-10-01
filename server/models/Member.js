@@ -8,6 +8,11 @@ const schema = new mongoose.Schema({
   photo: String,
   joiningDate: { type: Date, default: Date.now },
   timeSlot: String,
+  gymOwner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   trainer: { type: mongoose.Schema.Types.ObjectId, ref: "Trainer", default: null },
   personalTraining: { type: Boolean, default: false },
   personalTrainingPlan: { type: mongoose.Schema.Types.ObjectId, ref: "PersonalTrainingPlan", default: null },
@@ -27,15 +32,15 @@ const schema = new mongoose.Schema({
   notes: String
 }, { timestamps: true });
 
-schema.methods.refreshStatus = function() {
+schema.methods.refreshStatus = function () {
   if (!this.membershipEnd) {
     this.status = "Inactive";
     return this.status;
   }
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
   const end = new Date(this.membershipEnd);
-  end.setHours(0,0,0,0);
+  end.setHours(0, 0, 0, 0);
   const diff = Math.ceil((end - today) / 86400000);
   this.status = diff < 0 ? "Expired" : diff <= 30 ? "Expiring" : "Active";
   return this.status;

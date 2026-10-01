@@ -9,6 +9,11 @@ const schema = new mongoose.Schema({
   transactionId: String,
   paymentDate: { type: Date, default: Date.now },
   note: String,
+  gymOwner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   membershipPeriodStart: { type: Date },
   membershipPeriodFee: { type: Number, min: 0 }
 }, { timestamps: true });

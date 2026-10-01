@@ -60,8 +60,6 @@ export default function Payments() {
     // ];
 
     const members = useSelector((state) => state.members.value);
-
-
     const payments = useSelector((state) => state.payments.value);
     const token = useSelector((state) => state.token.value);
 
@@ -69,16 +67,24 @@ export default function Payments() {
         register,
         handleSubmit,
         reset,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm({
         defaultValues: {
             member: "",
             amount: "",
+            discount: "",
             method: "Cash",
             transactionId: "",
             note: "",
         },
     });
+
+    const selectedMember = members.find((member) => member._id === watch("member"));
+    const selectedMemberPlanTotal = Number(selectedMember?.currentPlan?.price || 0) +
+        (selectedMember?.personalTraining
+            ? Number(selectedMember?.personalTrainingPlan?.price || selectedMember?.currentPlan?.personalTrainingPrice || 0)
+            : 0);
 
     // ========================================
     // SEARCH
@@ -118,6 +124,7 @@ export default function Payments() {
                 {
                     member: selectedMember._id,
                     amount: Number(data.amount),
+                    discount: Number(data.discount) || 0,
                     method: data.method,
                     transactionId: data.transactionId,
                     note: data.note,
@@ -345,6 +352,10 @@ export default function Payments() {
                                 </th>
 
                                 <th className="h-[46px] px-[18px] text-left text-[10px] font-semibold tracking-[0.4px] text-[#777]">
+                                    DISCOUNT
+                                </th>
+
+                                <th className="h-[46px] px-[18px] text-left text-[10px] font-semibold tracking-[0.4px] text-[#777]">
                                     AMOUNT
                                 </th>
                             </tr>
@@ -411,6 +422,11 @@ export default function Payments() {
                                         {payment.transactionId || "—"}
                                     </td>
 
+                                    {/* Discount */}
+                                    <td className="px-[18px] py-4 text-xs text-[#b05a00]">
+                                        {money(payment.discount || 0)}
+                                    </td>
+
                                     {/* Amount */}
                                     <td className="px-[18px] py-4 text-xs text-[#222]">
                                         <b className="font-semibold">
@@ -424,7 +440,7 @@ export default function Payments() {
                             {!filteredPayments.length && (
                                 <tr>
                                     <td
-                                        colSpan="6"
+                                        colSpan="7"
                                         className="
                                             h-[130px]
                                             px-4
@@ -522,6 +538,32 @@ export default function Payments() {
                         {errors.amount && (
                             <p className="mt-1 text-[10px] text-red-500">
                                 {errors.amount.message}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Discount */}
+                    <div>
+                        <label className="mb-1.5 block text-[11px] font-medium text-[#666]">
+                            Discount
+                        </label>
+
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="Optional discount"
+                            {...register("discount", {
+                                min: {
+                                    value: 0,
+                                    message: "Discount cannot be negative",
+                                },
+                            })}
+                            className={inputClass(errors.discount)}
+                        />
+
+                        {errors.discount && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                                {errors.discount.message}
                             </p>
                         )}
                     </div>

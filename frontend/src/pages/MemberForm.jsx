@@ -95,6 +95,7 @@ export default function MemberForm() {
             paymentAmount: "",
             paymentMethod: "Cash",
             transactionId: "",
+            discount: "",
             notes: "",
             photo: "",
         },
@@ -102,7 +103,20 @@ export default function MemberForm() {
 
     const members = useSelector((state) => state.members.value);
     const member = members.find((m) => m._id === id);
-    // console.log(member)
+    const selectedPlanTotal = (() => {
+        const plan = plans.find((item) => item._id === watch("planId"));
+        const selectedPersonalPlan = personalTrainingPlans.find(
+            (item) => item._id === watch("personalTrainingPlanId")
+        );
+
+        const basePrice = Number(plan?.price || 0);
+        const personalPrice = Number(
+            selectedPersonalPlan?.price ||
+            (watch("personalTraining") ? plan?.personalTrainingPrice || 0 : 0)
+        );
+
+        return basePrice + personalPrice;
+    })();
 
 
     // Static edit data
@@ -162,7 +176,12 @@ export default function MemberForm() {
                 photo = upload.data.url;
             }
 
-            const payload = { ...data, photo, trainer: data.trainer || null };
+            const payload = {
+                ...data,
+                discount: Number(data.discount) || 0,
+                photo,
+                trainer: data.trainer || null,
+            };
             const res = edit
                 ? await axios.put(`${import.meta.env.VITE_API_URL}/api/members/${id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -397,7 +416,7 @@ export default function MemberForm() {
                     </div>
 
                     {/* Joining Date */}
-                    <FormField label="Joining Date">
+                    <FormField label="Payment Date">
                         <input
                             type="date"
                             {...register("joiningDate")}
@@ -521,6 +540,29 @@ export default function MemberForm() {
                                     className={inputClass(
                                         errors.paymentAmount
                                     )}
+                                />
+                            </FormField>
+
+                            <FormField label="Discount (Optional)">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max={selectedPlanTotal || undefined}
+                                    placeholder="Enter discount"
+                                    {...register("discount", {
+                                        min: {
+                                            value: 0,
+                                            message: "Discount cannot be negative",
+                                        },
+                                        validate: (value) => {
+                                            if (!value || Number(value) === 0) return true;
+                                            if (Number(value) > selectedPlanTotal) {
+                                                return `Discount cannot be more than ₹${selectedPlanTotal}`;
+                                            }
+                                            return true;
+                                        },
+                                    })}
+                                    className={inputClass(errors.discount)}
                                 />
                             </FormField>
 

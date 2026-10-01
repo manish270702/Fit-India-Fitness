@@ -41,8 +41,10 @@ export async function getMember(req, res) {
 }
 
 export async function createMember(req, res) {
-  const { name, phone, planId, personalTrainingPlanId, paymentAmount, paymentMethod, transactionId, ...data } = req.body;
+  const { name, phone, planId, personalTrainingPlanId, paymentAmount, paymentMethod, transactionId, discount, ...data } = req.body;
   if (!name || !phone) return res.status(400).json({ message: "Name and phone are required" });
+
+  const discountAmount = Math.max(Number(discount) || 0, 0);
 
   if (data.trainer === "") data.trainer = null;
   data.personalTraining = Boolean(data.personalTraining || data.trainer);
@@ -73,13 +75,18 @@ export async function createMember(req, res) {
       member.personalTrainingPlan = personalTrainingPlan._id;
       membershipPeriodFee = plan.price + personalTrainingPlan.price;
     }
+
+    if (discountAmount > membershipPeriodFee) {
+      return res.status(400).json({ message: `Discount cannot be more than ₹${membershipPeriodFee}` });
+    }
   }
+  const discountedMembershipFee = Math.max(membershipPeriodFee - discountAmount, 0);
   member.refreshStatus();
   member.financials = {
-    totalFees: membershipPeriodFee,
+    totalFees: discountedMembershipFee,
     totalPaid: Number(paymentAmount) || 0,
-    due: Math.max(membershipPeriodFee - (Number(paymentAmount) || 0), 0),
-    advance: Math.max((Number(paymentAmount) || 0) - membershipPeriodFee, 0)
+    due: Math.max(discountedMembershipFee - (Number(paymentAmount) || 0), 0),
+    advance: Math.max((Number(paymentAmount) || 0) - discountedMembershipFee, 0)
   };
   await member.save();
 
@@ -89,6 +96,7 @@ export async function createMember(req, res) {
       member: member._id,
       plan: member.currentPlan,
       amount: Number(paymentAmount),
+      discount: discountAmount,
       method: paymentMethod || "Cash",
       transactionId
     });
@@ -142,10 +150,11 @@ export async function deleteMember(req, res) {
 }
 
 export async function renewMember(req, res) {
-  const { planId, personalTrainingPlanId, amount, method, transactionId, startDate, note, personalTraining } = req.body;
+  const { planId, personalTrainingPlanId, amount, method, transactionId, startDate, note, personalTraining, discount } = req.body;
   const member = await Member.findById(req.params.id);
   if (!member) return res.status(404).json({ message: "Member not found" });
   const plan = await Plan.findById(planId);
+  const discountAmount = Math.max(Number(discount) || 0, 0);
   if (!plan) return res.status(400).json({ message: "Invalid plan" });
 
   const personalTrainingPlan = personalTrainingPlanId
@@ -153,6 +162,11 @@ export async function renewMember(req, res) {
     : null;
   if (personalTrainingPlanId && (!personalTrainingPlan || personalTrainingPlan.durationMonths !== plan.durationMonths)) {
     return res.status(400).json({ message: "Personal training plan duration must match the membership plan" });
+  }
+
+  const membershipPeriodFee = plan.price + (personalTrainingPlan?.price || (personalTraining ? plan.personalTrainingPrice : 0));
+  if (discountAmount > membershipPeriodFee) {
+    return res.status(400).json({ message: `Discount cannot be more than ₹${membershipPeriodFee}` });
   }
 
   const start = parseDate(startDate) || (
@@ -169,9 +183,9 @@ export async function renewMember(req, res) {
   member.membershipStart = start;
   member.membershipEnd = end;
   if (member.financials) {
-    const membershipPeriodFee = plan.price + (personalTrainingPlan?.price || (personalTraining ? plan.personalTrainingPrice : 0));
+    const discountedFee = Math.max(membershipPeriodFee - discountAmount, 0);
     const renewalPayment = Number(amount) || 0;
-    const totalFees = Number(member.financials.totalFees || 0) + membershipPeriodFee;
+    const totalFees = Number(member.financials.totalFees || 0) + discountedFee;
     const totalPaid = Number(member.financials.totalPaid || 0) + renewalPayment;
     const balance = totalFees - totalPaid;
     member.financials = {
@@ -190,6 +204,7 @@ export async function renewMember(req, res) {
       member: member._id,
       plan: plan._id,
       amount: Number(amount),
+      discount: discountAmount,
       method: method || "Cash",
       transactionId,
       note: note || "Membership renewal"

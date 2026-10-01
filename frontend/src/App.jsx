@@ -28,7 +28,8 @@ import { useSelector } from "react-redux";
 // ========================================
 
 function PrivateRoute() {
-    const token = localStorage.getItem("token");
+    const reduxToken = useSelector((state) => state.token.value);
+    const token = reduxToken || localStorage.getItem("token");
 
     if (!token) {
         return <Navigate to="/login" replace />;
@@ -38,7 +39,8 @@ function PrivateRoute() {
 }
 
 function PublicRoute() {
-    const token = useSelector((state) => state.token.value) || localStorage.getItem("token");
+    const reduxToken = useSelector((state) => state.token.value);
+    const token = reduxToken || localStorage.getItem("token");
     
     if (token) {
         return (

@@ -82,10 +82,9 @@ export default function MemberDetail() {
     const totalPaid = balance.totalPaid;
     const amountDue = balance.due;
     const advanceAmount = balance.advance;
+    const totalDiscount = payments.reduce((sum, payment) => sum + Number(payment.discount || 0), 0);
 
 
-    const plans = useSelector((state) => state.plans.value);
-    const personalTrainingPlans = useSelector((state) => state.personalTrainingPlans.value);
     const {
         register,
         handleSubmit,
@@ -96,12 +95,24 @@ export default function MemberDetail() {
         defaultValues: {
             planId: "",
             amount: "",
+            discount: "",
             method: "Cash",
             transactionId: "",
             personalTraining: false,
             personalTrainingPlanId: "",
         },
     });
+
+    const plans = useSelector((state) => state.plans.value);
+    const personalTrainingPlans = useSelector((state) => state.personalTrainingPlans.value);
+    const selectedRenewPlan = plans.find((plan) => plan._id === watch("planId"));
+    const selectedRenewTotal = Number(selectedRenewPlan?.price || 0) +
+        (watch("personalTraining") || watch("personalTrainingPlanId")
+            ? Number(
+                personalTrainingPlans.find((plan) => plan._id === watch("personalTrainingPlanId"))?.price ||
+                selectedRenewPlan?.personalTrainingPrice || 0
+            )
+            : 0);
 
     // Renew form submit
     const dispatch = useDispatch();
@@ -123,6 +134,7 @@ export default function MemberDetail() {
                     personalTrainingPlanId: data.personalTrainingPlanId,
                     personalTraining: data.personalTraining,
                     amount: Number(data.amount),
+                    discount: Number(data.discount) || 0,
                     method: data.method,
                     transactionId: data.transactionId,
                 },
@@ -286,6 +298,7 @@ export default function MemberDetail() {
                                     (member.personalTraining
                                         ? Number(member.personalTrainingPlan?.price || member.currentPlan?.personalTrainingPrice || 0)
                                         : 0),
+                                discount: "",
                                 method: "Cash",
                                 transactionId: "",
                                 personalTraining: member.personalTraining || false,
@@ -399,6 +412,12 @@ export default function MemberDetail() {
                         <Info
                             label="Paid"
                             value={money(totalPaid)}
+                        />
+
+                        <Info
+                            label="Discount"
+                            value={money(totalDiscount)}
+                            valueClass="text-[#b05a00]"
                         />
 
                         <Info
@@ -605,6 +624,23 @@ export default function MemberDetail() {
                                         text-[#777]
                                     "
                                 >
+                                    DISCOUNT
+                                </th>
+
+                                <th
+                                    className="
+                                        h-[46px]
+                                        border-b
+                                        border-[#ddd]
+                                        bg-[#f8f8f8]
+                                        px-[18px]
+                                        text-left
+                                        text-[10px]
+                                        font-semibold
+                                        tracking-[0.4px]
+                                        text-[#777]
+                                    "
+                                >
                                     AMOUNT
                                 </th>
                             </tr>
@@ -636,6 +672,12 @@ export default function MemberDetail() {
                                     </td>
 
                                     <td className="h-[62px] border-b border-[#eee] px-[18px] text-xs text-[#444]">
+                                        <span className="font-medium text-[#b05a00]">
+                                            {money(payment.discount || 0)}
+                                        </span>
+                                    </td>
+
+                                    <td className="h-[62px] border-b border-[#eee] px-[18px] text-xs text-[#444]">
                                         <b className="font-semibold text-[#222]">
                                             {money(payment.amount)}
                                         </b>
@@ -646,7 +688,7 @@ export default function MemberDetail() {
                             {!payments.length && (
                                 <tr>
                                     <td
-                                        colSpan="5"
+                                        colSpan="6"
                                         className="
                                             h-[120px]
                                             text-center
@@ -794,6 +836,52 @@ export default function MemberDetail() {
                     </div>
 
                     {/* Payment Method */}
+                    <div>
+                        <label className="mb-1.5 block text-[11px] text-[#666]">
+                            Discount
+                        </label>
+                        <input
+                            type="number"
+                            min="0"
+                            max={selectedRenewTotal || undefined}
+                            {...register("discount", {
+                                min: {
+                                    value: 0,
+                                    message: "Discount cannot be negative",
+                                },
+                                validate: (value) => {
+                                    if (!value || Number(value) === 0) return true;
+                                    if (Number(value) > selectedRenewTotal) {
+                                        return `Discount cannot be more than ₹${selectedRenewTotal}`;
+                                    }
+                                    return true;
+                                },
+                            })}
+                            placeholder="Optional discount"
+                            className="
+                                h-10
+                                w-full
+                                rounded-[7px]
+                                border
+                                border-[#ddd]
+                                bg-white
+                                px-3
+                                text-xs
+                                text-[#444]
+                                outline-none
+                                transition
+                                focus:border-[#c9aa00]
+                                focus:ring-2
+                                focus:ring-[#fff3a8]
+                            "
+                        />
+                        {errors.discount && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                                {errors.discount.message}
+                            </p>
+                        )}
+                    </div>
+
                     <div>
                         <label className="mb-1.5 block text-[11px] text-[#666]">
                             Payment Method

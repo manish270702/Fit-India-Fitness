@@ -14,13 +14,25 @@ export async function listPayments(req, res) {
 }
 
 export async function createPayment(req, res) {
-  const { member, amount, method, plan, transactionId, paymentDate, note } = req.body;
+  const { member, amount, method, plan, transactionId, paymentDate, note, discount } = req.body;
   if (!member || !amount || !method) return res.status(400).json({ message: "Member, amount and method are required" });
-  const memberRecord = await Member.findById(member).select("membershipStart currentPlan personalTraining personalTrainingPlan financials").populate("personalTrainingPlan", "price");
+  const memberRecord = await Member.findById(member)
+    .select("membershipStart currentPlan personalTraining personalTrainingPlan financials")
+    .populate("currentPlan", "price personalTrainingPrice")
+    .populate("personalTrainingPlan", "price");
   if (!memberRecord) return res.status(404).json({ message: "Member not found" });
+  const discountAmount = Math.max(Number(discount) || 0, 0);
+  const planTotal = Number(memberRecord.currentPlan?.price || 0) +
+    (memberRecord.personalTraining
+      ? Number(memberRecord.personalTrainingPlan?.price || 0)
+      : 0);
+  if (discountAmount > planTotal) {
+    return res.status(400).json({ message: `Discount cannot be more than ₹${planTotal}` });
+  }
   const paymentData = {
     member,
     amount: Number(amount),
+    discount: discountAmount,
     method,
     plan: plan || memberRecord.currentPlan || null,
     transactionId,
@@ -39,7 +51,7 @@ export async function createPayment(req, res) {
 
   const payment = await Payment.create(paymentData);
   if (memberRecord.financials) {
-    const totalFees = Number(memberRecord.financials.totalFees || 0);
+    const totalFees = Math.max(Number(memberRecord.financials.totalFees || 0) - discountAmount, 0);
     const totalPaid = Number(memberRecord.financials.totalPaid || 0) + Number(amount);
     const balance = totalFees - totalPaid;
     await Member.findByIdAndUpdate(member, {

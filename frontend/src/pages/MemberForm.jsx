@@ -145,7 +145,22 @@ export default function MemberForm() {
         if (photoPreview.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
     }, [photoPreview]);
 
-    const displayedPhoto = photoPreview || member?.photo || "";
+    const getSafeImageSrc = (value) => {
+        if (!value || typeof value !== "string") return "";
+        if (value.startsWith("blob:")) return value;
+        try {
+            const parsed = new URL(value, window.location.origin);
+            if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+                return parsed.href;
+            }
+        } catch {
+            return "";
+        }
+        return "";
+    };
+
+    const rawDisplayedPhoto = photoPreview || member?.photo || "";
+    const displayedPhoto = getSafeImageSrc(rawDisplayedPhoto);
     const selectedPlan = plans.find((plan) => plan._id === watch("planId"));
 
     // Static submit
@@ -446,13 +461,13 @@ export default function MemberForm() {
                             {trainers
                                 .filter((trainer) => trainer.status === "Active")
                                 .map((trainer) => (
-                                <option
-                                    key={trainer._id}
-                                    value={trainer._id}
-                                >
-                                    {trainer.name}
-                                </option>
-                            ))}
+                                    <option
+                                        key={trainer._id}
+                                        value={trainer._id}
+                                    >
+                                        {trainer.name}
+                                    </option>
+                                ))}
                         </select>
                     </FormField>
 

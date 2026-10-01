@@ -20,6 +20,13 @@ dotenv.config({ path: path.join(serverDirectory, ".env") });
 const app = express();
 const port = process.env.PORT || 5000;
 
+const RateLimit = require('express-rate-limit');
+const limiter = RateLimit({
+  windowMs: 5 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
+app.use(limiter);
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",

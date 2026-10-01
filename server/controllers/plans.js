@@ -50,12 +50,20 @@ export async function updatePlan(req, res) {
   try {
     const ownerId = req.user._id;
 
-    const updates = {
-      ...req.body
-    };
+    const allowedUpdateFields = [
+      "name",
+      "description",
+      "price",
+      "durationDays",
+      "isActive"
+    ];
 
-    // Never allow frontend to change gym ownership
-    delete updates.gymOwner;
+    const updates = {};
+    for (const field of allowedUpdateFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    }
 
     const plan = await Plan.findOneAndUpdate(
       {

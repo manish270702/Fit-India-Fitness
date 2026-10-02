@@ -215,10 +215,10 @@ export default function Dashboard() {
                             text-[#c2a200]
                         "
                     >
-                        <IndianRupee
+                        {/* <IndianRupee
                             size={30}
                             className="shrink-0"
-                        />
+                        /> */}
 
                         <div>
                             <b className="block text-2xl font-bold text-[#111] sm:text-[28px]">

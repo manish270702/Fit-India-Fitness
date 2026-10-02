@@ -20,11 +20,16 @@ dotenv.config({ path: path.join(serverDirectory, ".env") });
 const app = express();
 const port = process.env.PORT || 5000;
 
-const RateLimit = require('express-rate-limit');
-const limiter = RateLimit({
-  windowMs: 5 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
+import { rateLimit } from 'express-rate-limit' // Or: import rateLimit from 'express-rate-limit'
+
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000, 
+  limit: 100,               // Max 100 requests per windowMs (modern alternative to 'max')
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,    // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false,      // Disable the `X-RateLimit-*` headers
 });
+
 app.use(limiter);
 
 app.use(
